@@ -1,0 +1,19 @@
+{
+  "name": "haar",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "bluebird": "^3.5.1",
+    "get-pixels": "^3.3.0",
+    "pixel-getter": "0.0.5",
+    "png-pixel": "^1.1.0",
+    "save-pixels": "^2.3.4",
+    "zeros": "^1.0.0"
+  }
+}

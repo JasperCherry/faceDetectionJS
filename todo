@@ -1,0 +1,7 @@
+///////////   Project - face recognition pure js:
+
+
+
+- save only one face if the results are in same area
+
+- stop the check if its beside the borders of the image, do not zero array like now
