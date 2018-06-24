@@ -1,7 +1,3 @@
-///////////   Project - face recognition pure js:
+scaling
 
-
-
-- save only one face if the results are in same area
-
-- stop the check if its beside the borders of the image, do not zero array like now
+one face only for area that can contain one face, based on scale, eliminate glitches

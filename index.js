@@ -4,24 +4,28 @@ var getDimensions = Promise.promisify(require("get-pixels"));
 var zeros = require("zeros")
 var savePixels = require("save-pixels")
 
-const saveImage = (pixelsArray, targetX, targetY) => {
+const saveImage = (array, targetX, targetY) => {
+  let pixelsArray = JSON.parse(JSON.stringify(array));
   let height = pixelsArray.length;
   let width = pixelsArray[0].length;
 
-  var buffer = require('fs').createWriteStream('./out/faceX' + targetX + 'Y' + targetY + '.png');
+  var buffer = require('fs').createWriteStream('./output/face' + targetX + targetY + '.png');
   var x = zeros([width, height])
   for (let h = 0; h < height; h++) {
     for (let w = 0; w < width; w++) {
-      if (Math.abs(targetX - w) < 10 && Math.abs(targetY - h) < 10) {
-        x.set(w, h, 0);
-      } else {
-        x.set(w, h, pixelsArray[h][w]);
+      if (w > targetX - 10 && w < targetX + 10 && h === targetY) {
+        pixelsArray[h][w] = 0;
       }
+      if (h > targetY - 10 && h < targetY + 10 && w === targetX) {
+        pixelsArray[h][w] = 0;
+      }
+
+      x.set(w, h, pixelsArray[h][w]);
     }
   }
 
   savePixels(x, 'png').on('end', function() {
-    console.log("final image has been saved");
+    console.log("image has been saved");
   }).pipe(buffer);
 }
 
@@ -82,300 +86,116 @@ const drawHorizontalLine = (pixelsArray, borderValue) => {
   return pixelsArray;
 }
 
-// areas selection
-
-const selectAreaA = (pixelsArray, valueX, valueY, scale) => {
+const getSquareAverageColor = (pixelsArray, squareStartX, squareStartY) => {
   let height = pixelsArray.length;
   let width = pixelsArray[0].length;
-  let allColorValues = [];
-  let averageColorValue = 0;
+  let squareColorSum = 0;
 
-  for (let h = valueY - Math.round(16 * scale); h < valueY; h++) {
-    for (let w = valueX - Math.round(16 * scale); w < valueX + Math.round(16 * scale); w++) {
-      if (h >= 0 && h < pixelsArray.length && w >= 0 && w < pixelsArray[0].length) {
-        allColorValues.push(pixelsArray[h][w]);
-      }
+  for (let h = squareStartY; h < 10 + squareStartY; h++) {
+    for (let w = squareStartX; w < 10 + squareStartX; w++) {
+      squareColorSum += pixelsArray[h][w];
     }
   }
 
-  if (allColorValues.length) {
-    averageColorValue = allColorValues.reduce((acc, val) => acc + val) / allColorValues.length;
-  }
-
-  return averageColorValue;
+  return squareColorSum / 100;
 }
 
-const selectAreaB = (pixelsArray, valueX, valueY, scale) => {
-  let height = pixelsArray.length;
-  let width = pixelsArray[0].length;
-  let allColorValues = [];
-  let averageColorValue = 0;
+const getAverageForAllSquares = (pixelsArray, startingX, startingY) => {
+  let allSquaresAverage = [];
+  for (let z = 0; z < 12; z++) {
+    let row = [];
+    for (let x = 0; x < 10; x++) {
+      row.push(getSquareAverageColor(pixelsArray, startingX + x * 10, startingY + z * 10));
+    }
+    allSquaresAverage.push(row);
+  }
+  return allSquaresAverage;
+}
 
-  for (let h = valueY; h < valueY + Math.round(16 * scale); h++) {
-    for (let w = valueX - Math.round(16 * scale); w < valueX + Math.round(16 * scale); w++) {
-      if (h >= 0 && h < pixelsArray.length && w >= 0 && w < pixelsArray[0].length) {
-        allColorValues.push(pixelsArray[h][w]);
-      }
+const getAverageManySquares = (allSquaresAverage, startX, endX, startY, endY) => {
+  let totalAverage = 0;
+  let counter = 0;
+
+  for (let h = startY; h < endY; h++) {
+    for (let w = startX; w < endX; w++) {
+      totalAverage += allSquaresAverage[h][w];
+      counter++;
     }
   }
-
-  if (allColorValues.length) {
-    averageColorValue = allColorValues.reduce((acc, val) => acc + val) / allColorValues.length;
-  }
-
-  return averageColorValue;
+  return totalAverage / counter;
 }
 
-const selectAreaC = (pixelsArray, valueX, valueY, scale) => {
-  let height = pixelsArray.length;
-  let width = pixelsArray[0].length;
-  let allColorValues = [];
-  let averageColorValue = 0;
-
-  for (let h = valueY - Math.round(42 * scale); h < valueY - Math.round(26 * scale); h++) {
-    for (let w = valueX - Math.round(16 * scale); w < valueX + Math.round(16 * scale); w++) {
-      if (h >= 0 && h < pixelsArray.length && w >= 0 && w < pixelsArray[0].length) {
-        allColorValues.push(pixelsArray[h][w]);
-      }
-    }
-  }
-
-  if (allColorValues.length) {
-    averageColorValue = allColorValues.reduce((acc, val) => acc + val) / allColorValues.length;
-  }
-
-  return averageColorValue;
-}
-
-const selectAreaK = (pixelsArray, valueX, valueY, scale) => {
-  let height = pixelsArray.length;
-  let width = pixelsArray[0].length;
-  let allColorValues = [];
-  let averageColorValue = 0;
-
-  for (let h = valueY - Math.round(106 * scale); h < valueY - Math.round(84 * scale); h++) {
-    for (let w = valueX - Math.round(14 * scale); w < valueX + Math.round(14 * scale); w++) {
-      if (h >= 0 && h < pixelsArray.length && w >= 0 && w < pixelsArray[0].length) {
-        allColorValues.push(pixelsArray[h][w]);
-      }
-    }
-  }
-
-  if (allColorValues.length) {
-    averageColorValue = allColorValues.reduce((acc, val) => acc + val) / allColorValues.length;
-  }
-
-  return averageColorValue;
-}
-
-const selectAreaD = (pixelsArray, valueX, valueY, scale) => {
-  let height = pixelsArray.length;
-  let width = pixelsArray[0].length;
-  let allColorValues = [];
-  let averageColorValue = 0;
-
-  for (let h = valueY - Math.round(84 * scale); h < valueY - Math.round(62 * scale); h++) {
-    for (let w = valueX - Math.round(14 * scale); w < valueX + Math.round(14 * scale); w++) {
-      if (h >= 0 && h < pixelsArray.length && w >= 0 && w < pixelsArray[0].length) {
-        allColorValues.push(pixelsArray[h][w]);
-      }
-    }
-  }
-
-  if (allColorValues.length) {
-    averageColorValue = allColorValues.reduce((acc, val) => acc + val) / allColorValues.length;
-  }
-
-  return averageColorValue;
-}
-
-const selectAreaI = (pixelsArray, valueX, valueY, scale) => {
-  let height = pixelsArray.length;
-  let width = pixelsArray[0].length;
-  let allColorValues = [];
-  let averageColorValue = 0;
-
-  for (let h = valueY - Math.round(106 * scale); h < valueY - Math.round(84 * scale); h++) {
-    for (let w = valueX - Math.round(39 * scale); w < valueX - Math.round(11 * scale); w++) {
-      if (h >= 0 && h < pixelsArray.length && w >= 0 && w < pixelsArray[0].length) {
-        allColorValues.push(pixelsArray[h][w]);
-      }
-    }
-  }
-
-  if (allColorValues.length) {
-    averageColorValue = allColorValues.reduce((acc, val) => acc + val) / allColorValues.length;
-  }
-
-  return averageColorValue;
-}
-
-const selectAreaE = (pixelsArray, valueX, valueY, scale) => {
-  let height = pixelsArray.length;
-  let width = pixelsArray[0].length;
-  let allColorValues = [];
-  let averageColorValue = 0;
-
-  for (let h = valueY - Math.round(84 * scale); h < valueY - Math.round(62 * scale); h++) {
-    for (let w = valueX - Math.round(39 * scale); w < valueX - Math.round(11 * scale); w++) {
-      if (h >= 0 && h < pixelsArray.length && w >= 0 && w < pixelsArray[0].length) {
-        allColorValues.push(pixelsArray[h][w]);
-      }
-    }
-  }
-
-  if (allColorValues.length) {
-    averageColorValue = allColorValues.reduce((acc, val) => acc + val) / allColorValues.length;
-  }
-
-  return averageColorValue;
-}
-
-const selectAreaG = (pixelsArray, valueX, valueY, scale) => {
-  let height = pixelsArray.length;
-  let width = pixelsArray[0].length;
-  let allColorValues = [];
-  let averageColorValue = 0;
-
-  for (let h = valueY - Math.round(62 * scale); h < valueY - Math.round(40 * scale); h++) {
-    for (let w = valueX - Math.round(39 * scale); w < valueX - Math.round(11 * scale); w++) {
-      if (h >= 0 && h < pixelsArray.length && w >= 0 && w < pixelsArray[0].length) {
-        allColorValues.push(pixelsArray[h][w]);
-      }
-    }
-  }
-
-  if (allColorValues.length) {
-    averageColorValue = allColorValues.reduce((acc, val) => acc + val) / allColorValues.length;
-  }
-
-  return averageColorValue;
-}
-
-const selectAreaJ = (pixelsArray, valueX, valueY, scale) => {
-  let height = pixelsArray.length;
-  let width = pixelsArray[0].length;
-  let allColorValues = [];
-  let averageColorValue = 0;
-
-  for (let h = valueY - Math.round(106 * scale); h < valueY - Math.round(84 * scale); h++) {
-    for (let w = valueX + Math.round(11 * scale); w < valueX + Math.round(39 * scale); w++) {
-      if (h >= 0 && h < pixelsArray.length && w >= 0 && w < pixelsArray[0].length) {
-        allColorValues.push(pixelsArray[h][w]);
-      }
-    }
-  }
-
-  if (allColorValues.length) {
-    averageColorValue = allColorValues.reduce((acc, val) => acc + val) / allColorValues.length;
-  }
-
-  return averageColorValue;
-}
-
-const selectAreaF = (pixelsArray, valueX, valueY, scale) => {
-  let height = pixelsArray.length;
-  let width = pixelsArray[0].length;
-  let allColorValues = [];
-  let averageColorValue = 0;
-
-  for (let h = valueY - Math.round(84 * scale); h < valueY - Math.round(62 * scale); h++) {
-    for (let w = valueX + Math.round(11 * scale); w < valueX + Math.round(39 * scale); w++) {
-      if (h >= 0 && h < pixelsArray.length && w >= 0 && w < pixelsArray[0].length) {
-        allColorValues.push(pixelsArray[h][w]);
-      }
-    }
-  }
-
-  if (allColorValues.length) {
-    averageColorValue = allColorValues.reduce((acc, val) => acc + val) / allColorValues.length;
-  }
-
-  return averageColorValue;
-}
-
-const selectAreaH = (pixelsArray, valueX, valueY, scale) => {
-  let height = pixelsArray.length;
-  let width = pixelsArray[0].length;
-  let allColorValues = [];
-  let averageColorValue = 0;
-
-  for (let h = valueY - Math.round(62 * scale); h < valueY - Math.round(40 * scale); h++) {
-    for (let w = valueX + Math.round(11 * scale); w < valueX + Math.round(39 * scale); w++) {
-      if (h >= 0 && h < pixelsArray.length && w >= 0 && w < pixelsArray[0].length) {
-        allColorValues.push(pixelsArray[h][w]);
-      }
-    }
-  }
-
-  if (allColorValues.length) {
-    averageColorValue = allColorValues.reduce((acc, val) => acc + val) / allColorValues.length;
-  }
-
-  return averageColorValue;
-}
-
+// MAIN FUNCTION
 const run = async (image) => {
 
   let dimensions = await getDimensions(image).then(data => data.shape.slice());
   let width = dimensions[0];
   let height = dimensions[1];
-  console.log('image width:', width, 'image height:', height);
+  //console.log('image width:', width, 'image height:', height);
   let pixels = await getPixels(image).then(data => data);
   let pixelsArray = formPixelsArray(pixels, height, width);
   pixelsArray = transformGray(pixelsArray);
 
-  for (let scale = 0.5; scale <= 2; scale = scale + 0.5) {
-    console.log('Checking for face with SCALE =', scale);
-    for (let h = 0; h < height; h++) {
-      for (let w = 0; w < width; w++) {
+  for (let w = 0; w < width - 100; w++) {
+    for (let h = 0; h < height - 120; h++) {
 
-        const A = selectAreaA(pixelsArray, w, h, scale);
-        const B = selectAreaB(pixelsArray, w, h, scale);
-        const C = selectAreaC(pixelsArray, w, h, scale);
-        const D = selectAreaD(pixelsArray, w, h, scale);
-        const E = selectAreaE(pixelsArray, w, h, scale);
-        const F = selectAreaF(pixelsArray, w, h, scale);
-        const G = selectAreaG(pixelsArray, w, h, scale);
-        const H = selectAreaH(pixelsArray, w, h, scale);
-        const I = selectAreaI(pixelsArray, w, h, scale);
-        const J = selectAreaJ(pixelsArray, w, h, scale);
-        const K = selectAreaK(pixelsArray, w, h, scale);
+      let allSquaresAverage = getAverageForAllSquares(pixelsArray, w, h);
 
-        if (E < I && E < K && E < D && E < G && E < J && E < H && E < B && E < C
-          && F < J && F < K && F < D && F < H && F < I && F < G && F < B && F < B &&
-           A < G && A < C && A < H && A < B && A < I && A < K && A < J && A < D &&
-            C < I && C < K && C < J) {
+      let leftEye = getAverageManySquares(allSquaresAverage, 0, 4, 1, 4);
+      let rightEye = getAverageManySquares(allSquaresAverage, 6, 10, 1, 4);
+      let mouth = getAverageManySquares(allSquaresAverage, 3, 7, 8, 11);
 
-          console.log('Face with its lips detected at:', w, h);
-          saveImage(pixelsArray, w, h);
-        }
+      let noseAreaUp = getAverageManySquares(allSquaresAverage, 4, 6, 0, 4);
+      let noseAreaDown = getAverageManySquares(allSquaresAverage, 4, 6, 4, 8);
 
-        /*
-      console.log('A', A);
-      console.log('B', B);
-      console.log('C', C);
-      console.log('D', D);
-      console.log('E', E);
-      console.log('F', F);
-      console.log('G', G);
-      console.log('H', H);
-      console.log('I', I);
-      console.log('J', J);
-      console.log('K', K);
+      let leftEyeAreaDown = getAverageManySquares(allSquaresAverage, 0, 4, 4, 7);
+      let rightEyeAreaDown = getAverageManySquares(allSquaresAverage, 6, 10, 4, 7);
 
-      // first rule
-      if (A < B && A < C && A < D && A < G && A < H && F < D && F < G && F < H && E < D && E < G && E < H && E < C
-         && E < A && E < B && F < C && F < A && F < B && C < D && C < G && C < H) {
-        console.log('Face with its lips detected at:', w, h);
-        saveImage(pixelsArray, w, h);
+      let leftEyeAreaAbove = getAverageManySquares(allSquaresAverage, 0, 5, 0, 1);
+      let rightEyeAreaAbove = getAverageManySquares(allSquaresAverage, 5, 10, 0, 1);
+
+      let bothEyesAreaAbove = getAverageManySquares(allSquaresAverage, 0, 10, 0, 1);
+
+      let mouthAreaLeft = getAverageManySquares(allSquaresAverage, 1, 3, 5, 8);
+      let mouthAreaRight = getAverageManySquares(allSquaresAverage, 7, 9, 5, 8);
+      let mouthAreaDown = getAverageManySquares(allSquaresAverage, 3, 7, 10, 11);
+
+      let faceExists = true;
+
+      if (leftEye > leftEyeAreaDown || leftEye > leftEyeAreaAbove || leftEye > noseAreaUp || leftEye > mouthAreaLeft) {
+        faceExists = false;
       }
-      */
 
+      if (rightEye > rightEyeAreaDown || rightEye > rightEyeAreaAbove || rightEye > noseAreaUp || rightEye > mouthAreaRight) {
+        faceExists = false;
       }
+
+      if (mouth > mouthAreaDown || mouth > mouthAreaLeft || mouth > mouthAreaRight || mouth > noseAreaUp || mouth > noseAreaDown) {
+        faceExists = false;
+      }
+
+      if (faceExists) {
+        console.log('Face detected');
+        saveImage(pixelsArray, w + 50, h + 60);
+      }
+
     }
   }
 
+  /*
+  // drawing lines in current configuration 10x12
+
+  one line above and under 10x10 square
+  pixelsArray = drawHorizontalLine(pixelsArray, 190);
+  pixelsArray = drawHorizontalLine(pixelsArray, 80);
+
+  // 10x10
+  for (let x = 0; x < 10; x++) {
+    pixelsArray = drawVerticalLine(pixelsArray, 50 + 10 * x);
+    pixelsArray = drawHorizontalLine(pixelsArray, 90 + 10 * x);
+  }
+  */
+
 };
 
-run("faces/mt.jpg");
+run("faces/m18.jpg");
